@@ -120,11 +120,46 @@ func UpdateUser(ctx *gin.Context) {
 	if err := initializers.Db.Save(&user).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "could not update",
-			"error": err,
+			"error":   err,
 		})
 		return
 	} else {
 		ctx.JSON(200, gin.H{"updated record": user})
 	}
 
+}
+
+func GetUserById(ctx *gin.Context) {
+	userId := ctx.Param("userid")
+	if userId == ""{
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"msg": "no id provided",
+		})
+		return
+	}
+	var user User
+	if err := initializers.Db.First(&user, "id = ?", userId).Error; err !=nil{
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"msg": "could not find the user with specific id",
+		})
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"user": user,
+	})
+}
+
+//remove before deployment
+
+func GetAllUser(ctx *gin.Context) {
+	var user *[]User
+	if err := initializers.Db.Model(&User{}).Find(&user).Error; err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"msg": "error fetching users",
+		})
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"users": user,
+	})
 }

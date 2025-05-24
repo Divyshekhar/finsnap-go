@@ -17,6 +17,8 @@ func main() {
 	router := gin.Default()
 	router.POST("/create", controllers.CreateUser)
 	router.POST("/login", controllers.LoginUser)
+	router.GET("/user/:userid", controllers.GetUserById)
+	router.GET("/all", controllers.GetAllUser)
 
 	router.PUT("/update", middleware.RequireAuth(), controllers.UpdateUser)
 
