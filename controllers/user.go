@@ -1,15 +1,15 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/Divyshekhar/finsnap-go/initializers"
 	"github.com/Divyshekhar/finsnap-go/models"
+	"github.com/Divyshekhar/finsnap-go/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -20,30 +20,72 @@ type User struct {
 }
 
 func CreateUser(c *gin.Context) {
-	var user *User
+	var user User
 	err := c.ShouldBindBodyWithJSON(&user)
 	if err != nil {
 		c.JSON(400, gin.H{"message": "Wrong body"})
 		return
 	}
+	hashed, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	if err != nil {
+		log.Fatal("Error creating hash")
+	}
+
+	user.Password = string(hashed)
 	result := initializers.Db.Create(user)
 	if result.Error != nil {
 		c.JSON(400, gin.H{"message": "error creating the user"})
 		return
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"name":   user.Name,
-		"userId": user.ID,
-		"email":  user.Email,
-		"exp":    time.Now().Add(24*time.Hour).Unix(),
-	})
-	secret := os.Getenv("SECRET")
-	tokenString, err := token.SignedString([]byte(secret))
+	tokenString, err := utils.GenerateJwt(user.Name, user.Email, user.ID.String())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Error signing token"})
 		return
 	}
-	c.JSON(200, gin.H{"token": tokenString})
+
+	c.JSON(200, gin.H{
+		"token": tokenString,
+	})
+
+}
+
+func LoginUser(ctx *gin.Context) {
+	var user User
+	if err := ctx.ShouldBindBodyWithJSON(&user); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"msg": "Wrong Data sent",
+		})
+		return
+	}
+	if user.Password == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"msg": "invalid password or email"})
+		return
+	}
+	var loginUser *User
+	err := initializers.Db.First(&loginUser, "email = ?", user.Email).Error
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"message": "wrong email or password",
+		})
+		return
+	}
+	errr := bcrypt.CompareHashAndPassword([]byte(loginUser.Password), []byte(user.Password))
+	if errr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"message": "wrong email or password",
+		})
+		return
+	}
+	tokenString, err := utils.GenerateJwt(loginUser.Name, loginUser.Email, loginUser.ID.String())
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Error signing token"})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"token": tokenString,
+	})
 
 }
 
@@ -78,9 +120,10 @@ func UpdateUser(ctx *gin.Context) {
 	if err := initializers.Db.Save(&user).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "could not update",
+			"error": err,
 		})
 		return
-	}else{
+	} else {
 		ctx.JSON(200, gin.H{"updated record": user})
 	}
 
