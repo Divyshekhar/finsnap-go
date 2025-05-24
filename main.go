@@ -1,9 +1,8 @@
 package main
 
 import (
-	"github.com/Divyshekhar/finsnap-go/controllers"
 	"github.com/Divyshekhar/finsnap-go/initializers"
-	"github.com/Divyshekhar/finsnap-go/middleware"
+	"github.com/Divyshekhar/finsnap-go/routes"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,13 +14,7 @@ func init() {
 
 func main() {
 	router := gin.Default()
-	router.POST("/create", controllers.CreateUser)
-	router.POST("/login", controllers.LoginUser)
-	router.GET("/user/:userid", controllers.GetUserById)
-	router.GET("/all", controllers.GetAllUser)
-
-	router.PUT("/update", middleware.RequireAuth(), controllers.UpdateUser)
-
+	routes.RegisterUserRoutes(router)
 	router.Run(":3000")
 
 }
