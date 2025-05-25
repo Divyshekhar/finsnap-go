@@ -1,6 +1,11 @@
 package models
 
-import "time"
+import (
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Income struct {
 	ID          string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
@@ -16,4 +21,9 @@ type Income struct {
 
 	UserID string `gorm:"type:uuid;not null"`
 	User   User   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+func (i *Income) BeforeSave(tx *gorm.DB) (err error) {
+	i.Category = strings.ToLower(i.Category)
+	return
 }
