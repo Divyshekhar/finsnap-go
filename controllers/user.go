@@ -32,7 +32,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	user.Password = string(hashed)
-	result := initializers.Db.Create(user)
+	result := initializers.Db.Create(&user)
 	if result.Error != nil {
 		c.JSON(400, gin.H{"message": "error creating the user"})
 		return
@@ -163,3 +163,4 @@ func GetAllUser(ctx *gin.Context) {
 		"users": user,
 	})
 }
+
