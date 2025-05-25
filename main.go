@@ -16,6 +16,7 @@ func main() {
 	router := gin.Default()
 	routes.RegisterUserRoutes(router)
 	routes.RegisterIncomeRoutes(router)
+	routes.RegisterExpenseRoutes(router)
 	router.Run(":3000")
 
 }

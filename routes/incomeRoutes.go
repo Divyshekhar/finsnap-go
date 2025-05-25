@@ -16,6 +16,5 @@ func RegisterIncomeRoutes(router *gin.Engine) {
 		incomeGroup.GET("/total", middleware.RequireAuth(), controllers.GetToalIncome)
 		incomeGroup.GET("/history/:category", middleware.RequireAuth(), controllers.GetIncomeHistory)
 
-
 	}
 }

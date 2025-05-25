@@ -274,3 +274,24 @@ func GetIncomeHistory(ctx *gin.Context) {
 		"data":    incomes,
 	})
 }
+func GetIncomeByUserID(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
+	var incomes []models.Income
+	if err := initializers.Db.Where("user_id = ?", userID).Find(&incomes).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch incomes"})
+		return
+	}
+
+	c.JSON(http.StatusOK, incomes)
+}
